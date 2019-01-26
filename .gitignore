@@ -1,2 +1,3 @@
-.cache/
-coordinates.egg-info/
+.tox/
+*.egg-info/
+.*cache/

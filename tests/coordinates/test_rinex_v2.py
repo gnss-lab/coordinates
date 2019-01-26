@@ -52,7 +52,7 @@ def test_parse_epoch(single_message):
     for _ in range(6):
         next(single_message)
 
-    with pytest.raises(StopIteration):
+    with pytest.raises(EOFError):
         RinexNavFileV2.parse_epoch(single_message)
 
 

@@ -1,4 +1,4 @@
-coordinates v?.?.?
+coordinates v1.0.1
 ===============
 
 - PEP 479 adoption.

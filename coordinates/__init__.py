@@ -6,7 +6,7 @@ Tools for manipulating coordinates for gnss-lab project.
 from math import pi, sin, cos, atan2, sqrt
 from coordinates.sat import satellite_xyz
 
-__version__ = '1.0.1.dev1'
+__version__ = '1.0.1'
 __author__ = __maintainer__ = 'Ilya Zhivetiev'
 __email__ = 'i.zhivetiev@gnss-lab.org'
 

@@ -1,9 +1,7 @@
-from contextlib import contextmanager
 from io import StringIO
-from tempfile import NamedTemporaryFile
 
 import pytest
-from os import remove
+from testlib import mktmp
 
 _nav_content_v2 = '''\
      2              NAVIGATION DATA                         RINEX VERSION / TYPE
@@ -78,21 +76,6 @@ S20 2017 09 08 00 03 12 0.000000000000e+00 0.000000000000e+00 4.322000000000e+05
     -1.124591600000e+04 0.000000000000e+00 0.000000000000e+00 3.276700000000e+04
      0.000000000000e+00 0.000000000000e+00 0.000000000000e+00 1.200000000000e+01
 '''
-
-@contextmanager
-def mktmp(tmp_str):
-    tmp_file_name = None
-
-    try:
-        with NamedTemporaryFile(mode='w', delete=False) as tmp_file:
-            tmp_file.writelines(tmp_str)
-            tmp_file_name = tmp_file.name
-
-        yield tmp_file_name
-
-    finally:
-        if tmp_file_name:
-            remove(tmp_file_name)
 
 
 @pytest.fixture

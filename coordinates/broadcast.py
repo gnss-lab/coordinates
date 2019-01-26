@@ -367,7 +367,7 @@ def rnx_nav(filename):
     """
     version, file_type = RinexNavFileV2.retrieve_ver_type(filename)
 
-    if version in {2.0, 2.1, 2.11}:
+    if version in {2.0, 2.01, 2.1, 2.11}:
         return RinexNavFileV2(filename)
     elif version in {3.0, 3.01, 3.02, 3.03}:
         return RinexNavFileV3(filename)

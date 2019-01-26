@@ -122,7 +122,7 @@ class RinexNavFile(ABC):
             try:
                 line = next(file_object)
             except StopIteration:
-                msg = 'Unexpected end of the file'
+                msg = 'Unexpected end of the file.'
                 raise EOFError(msg)
             orbits[i] = line.rstrip()
         return orbits
@@ -186,22 +186,44 @@ class RinexNavFileV2(RinexNavFile):
 
     @staticmethod
     def retrieve_ver_type(filename):
-        """Возвращает версию и тип файла
+        """Returns RINEX version and type
+
+        Returns
+        -------
+        float, str
+            RINEX version and type
+
+        Raises
+        ------
+        EOFError
+            On empty file.
 
         """
         with open(filename) as rinex:
-            header_line = next(rinex)
-            version = float(header_line[:9])
-            file_type = header_line[20]
-
+            try:
+                header_line = next(rinex)
+            except StopIteration:
+                raise EOFError('Unexpected end of the file.')
+            else:
+                version = float(header_line[:9])
+                file_type = header_line[20]
         return version, file_type
 
     @staticmethod
     def parse_epoch(file_object):
         """Return satellite number, epoch and sv_clock
 
+        Raises
+        ------
+        EOFError
+            On the end of the file.
+
         """
-        line = next(file_object)
+        try:
+            line = next(file_object)
+        except StopIteration:
+            raise EOFError
+
         number = line[0:2]
 
         # year, month, day, hour, min; +sec
@@ -236,7 +258,10 @@ class RinexNavFileV2(RinexNavFile):
             self.skip_header(file_object)
 
             while True:
-                satellite, epoch, sv_clock = self.parse_epoch(file_object)
+                try:
+                    satellite, epoch, sv_clock = self.parse_epoch(file_object)
+                except EOFError:
+                    break
                 orbits = self.read_orbits(file_object, num_of_orbits)
                 message = self.parse_orbits(orbits, values_per_orbit)
                 yield system, satellite, epoch, sv_clock, message
@@ -281,8 +306,16 @@ class RinexNavFileV3(RinexNavFile):
         -------
         epoch_components : tuple
             (satellite_system, satellite_number, epoch, sv_clock)
+
+        Raises
+        ------
+        EOFError
+            On the end of the file.
         """
-        line = next(file_object)
+        try:
+            line = next(file_object)
+        except StopIteration:
+            raise EOFError
 
         system = line[0]
         number = line[1:3]
@@ -313,8 +346,11 @@ class RinexNavFileV3(RinexNavFile):
             self.skip_header(file_object)
 
             while True:
-                (system, satellite,
-                 epoch, sv_clock) = self.parse_epoch(file_object)
+                try:
+                    (system, satellite,
+                     epoch, sv_clock) = self.parse_epoch(file_object)
+                except EOFError:
+                    break
 
                 values_per_orbit = self.values_per_orbit[system]
                 num_of_orbits = len(values_per_orbit)

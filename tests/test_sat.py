@@ -1,9 +1,26 @@
 import datetime
 
 import pytest
-from coordinates.sat import reference_time, get_week_sec, get_day_sec, read_nav_data, \
-    nearest_message, get_dt, find_message, GPS_WAY, xyz_calculator, gps_sat_xyz, \
-    glo_sat_xyz, GLO_WAY
+
+from coordinates.exceptions import SatSystemError, NavMessageNotFoundError
+from coordinates.sat import GLO_WAY, GPS_WAY
+from coordinates.sat import (
+    find_message,
+    get_day_sec,
+    get_dt,
+    get_week_sec,
+    glo_sat_xyz,
+    gps_sat_xyz,
+    nearest_message,
+    read_nav_data,
+    reference_time,
+    xyz_calculator,
+)
+
+
+@pytest.fixture
+def unknown_sat_system():
+    return 'X'
 
 
 def test_get_week_sec():
@@ -25,9 +42,9 @@ def test_get_day_sec():
     assert std == test
 
 
-def test_reference_time():
-    with pytest.raises(ValueError):
-        reference_time('Y', datetime.datetime.now())
+def test_reference_time(unknown_sat_system):
+    with pytest.raises(SatSystemError, match=unknown_sat_system):
+        reference_time(unknown_sat_system, datetime.datetime.now())
 
 
 def test_read_nav_data(nav_file_unsorted_v3):
@@ -89,7 +106,7 @@ def test_nearest_message():
     epoch = datetime.datetime(2017, 9, 8, 15, 59, 44)
     assert nearest_message(messages, epoch) == messages[7]
 
-    with pytest.raises(ValueError):
+    with pytest.raises(NavMessageNotFoundError):
         epoch = datetime.datetime(2017, 9, 7)
         nearest_message(messages, epoch)
 
@@ -110,7 +127,7 @@ def test_get_dt():
     assert std == test
 
 
-def test_find_message():
+def test_find_message(unknown_sat_system):
     nav_data = {
         ('S', 38): [
             {'epoch': datetime.datetime(2017, 9, 8, 0, 1, 4), 'message': ()},
@@ -123,19 +140,22 @@ def test_find_message():
             {'epoch': datetime.datetime(2017, 9, 8, 0, 30, 56), 'message': ()},
             {'epoch': datetime.datetime(2017, 9, 8, 0, 35, 12), 'message': ()},
             {'epoch': datetime.datetime(2017, 9, 8, 0, 39, 28),
-             'message': ('SBAS')},
+             'message': ('SBAS',)},
             {'epoch': datetime.datetime(2017, 9, 8, 0, 43, 44), 'message': ()},
             {'epoch': datetime.datetime(2017, 9, 8, 0, 48), 'message': ()},
         ],
         ('G', 23): [
-            {'epoch': datetime.datetime(2017, 9, 8, 2, 0), 'message': ('GPS')},
+            {'epoch': datetime.datetime(2017, 9, 8, 2, 0),
+             'message': ('GPS',)},
             {'epoch': datetime.datetime(2017, 9, 8, 4, 0), 'message': ()},
             {'epoch': datetime.datetime(2017, 9, 8, 6, 0), 'message': ()},
             {'epoch': datetime.datetime(2017, 9, 8, 8, 0), 'message': ()},
             {'epoch': datetime.datetime(2017, 9, 8, 10, 0), 'message': ()},
-            {'epoch': datetime.datetime(2017, 9, 8, 11, 59, 44), 'message': ()},
+            {'epoch': datetime.datetime(2017, 9, 8, 11, 59, 44),
+             'message': ()},
             {'epoch': datetime.datetime(2017, 9, 8, 12, 0), 'message': ()},
-            {'epoch': datetime.datetime(2017, 9, 8, 13, 59, 44), 'message': ()},
+            {'epoch': datetime.datetime(2017, 9, 8, 13, 59, 44),
+             'message': ()},
             {'epoch': datetime.datetime(2017, 9, 8, 16, 0), 'message': ()},
             {'epoch': datetime.datetime(2017, 9, 8, 18, 0), 'message': ()},
             {'epoch': datetime.datetime(2017, 9, 8, 20, 0), 'message': ()},
@@ -147,7 +167,7 @@ def test_find_message():
     satellite, number = 'S', 38
     epoch = datetime.datetime(2017, 9, 8, 0, 40)
 
-    std = (32, 'SBAS')
+    std = (32, ('SBAS',))
     test = find_message(nav_data, satellite, number, epoch)
 
     assert std == test
@@ -155,24 +175,24 @@ def test_find_message():
     # GPS-way
     satellite, number = 'G', 23
 
-    std = (434400.0000000393, 'GPS')
+    std = (434400.0000000393, ('GPS',))
     test = find_message(nav_data, satellite, number, epoch)
 
     assert std == test
 
-    with pytest.raises(ValueError):
+    with pytest.raises(NavMessageNotFoundError):
         find_message(nav_data, 'R', 1, epoch)
 
-    with pytest.raises(ValueError):
-        find_message(nav_data, 'X', 1, epoch)
+    with pytest.raises(SatSystemError, match=unknown_sat_system):
+        find_message(nav_data, unknown_sat_system, 1, epoch)
 
 
-def test_xyz_calculator():
+def test_xyz_calculator(unknown_sat_system):
     for s in GPS_WAY:
         assert xyz_calculator(s) is gps_sat_xyz
 
     for s in GLO_WAY:
         assert xyz_calculator(s) is glo_sat_xyz
 
-    with pytest.raises(ValueError):
-        xyz_calculator('X')
+    with pytest.raises(SatSystemError, match=unknown_sat_system):
+        xyz_calculator(unknown_sat_system)

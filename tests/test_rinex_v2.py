@@ -3,6 +3,7 @@ from io import StringIO
 import pytest
 
 from coordinates.broadcast import RinexNavFileV2
+from coordinates.exceptions import RinexNavFileError
 
 
 @pytest.fixture
@@ -44,8 +45,7 @@ def test_parse_epoch(single_message):
 
     assert std == test
 
-    # ValueError
-    with pytest.raises(ValueError):
+    with pytest.raises(RinexNavFileError):
         RinexNavFileV2.parse_epoch(single_message)
 
     # EOF
@@ -73,7 +73,7 @@ def test_read_orbits(single_message):
     assert std == test
 
     # EOF
-    with pytest.raises(EOFError):
+    with pytest.raises(RinexNavFileError, match='Unexpected end of the file'):
         RinexNavFileV2.read_orbits(single_message, 7)
 
 

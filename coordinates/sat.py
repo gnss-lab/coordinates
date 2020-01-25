@@ -1,12 +1,12 @@
 import datetime
 from collections import defaultdict
-from operator import itemgetter
 from functools import lru_cache
-
 from math import sqrt, sin, cos, atan2
+from operator import itemgetter
 
 from coordinates import datum
 from coordinates.broadcast import rnx_nav
+from coordinates.exceptions import SatSystemError, NavMessageNotFoundError
 
 # GPS, BDS, Galileo, and IRNSS
 GPS_WAY = {'G', 'C', 'E', 'I'}
@@ -15,6 +15,13 @@ GPS_WAY = {'G', 'C', 'E', 'I'}
 GLO_WAY = {'R', 'S', 'J'}
 
 KNOWN_SYSTEMS = GPS_WAY | GLO_WAY
+
+EPOCH_START = dict(
+    G=datetime.datetime(1980, 1, 6, 0, 0, 0),  # GPS
+    C=datetime.datetime(2006, 1, 1, 0, 0, 0),  # BDS
+    E=datetime.datetime(1999, 8, 22, 0, 0, 13),  # Galileo
+    I=datetime.datetime(1999, 8, 21, 23, 59, 47),  # IRNSS
+)
 
 
 def get_week_sec(epoch, epoch_start):
@@ -65,20 +72,9 @@ def reference_time(satellite, epoch):
     seconds.
 
     """
-    epoch_start = dict(
-        G=datetime.datetime(1980, 1, 6, 0, 0, 0),  # GPS
-        C=datetime.datetime(2006, 1, 1, 0, 0, 0),  # BDS
-        E=datetime.datetime(1999, 8, 22, 0, 0, 13),  # Galileo
-        I=datetime.datetime(1999, 8, 21, 23, 59, 47),  # IRNSS
-    )
-
-    # GPS, BDS, Galileo, IRNSS
-    if satellite in set(epoch_start.keys()):
-        return get_week_sec(epoch, epoch_start[satellite])
-
-    else:
-        msg = 'Unknown satellite system {}.'.format(satellite)
-        raise ValueError(msg)
+    if satellite not in EPOCH_START:
+        raise SatSystemError(satellite)
+    return get_week_sec(epoch, EPOCH_START[satellite])
 
 
 def nearest_message(messages, obs_epoch):
@@ -87,9 +83,9 @@ def nearest_message(messages, obs_epoch):
     """
     first_date = messages[0]['epoch'].date()
     if not obs_epoch.date() == first_date:
-        msg = ('The dates of the navigation message and observation'
-               ' must be the same.')
-        raise ValueError(msg)
+        raise NavMessageNotFoundError(
+            'The dates of the nav message and observation must be the same.'
+        )
 
     left = -1
     right = len(messages)
@@ -113,10 +109,7 @@ def find_message(nav_data, satellite, number, epoch):
 
     """
     if satellite not in KNOWN_SYSTEMS:
-        msg = 'Unknown satellite system {}.'.format(
-            satellite
-        )
-        raise ValueError(msg)
+        raise SatSystemError(satellite)
 
     try:
         satellite_messages = nav_data[(satellite, number)]
@@ -125,7 +118,7 @@ def find_message(nav_data, satellite, number, epoch):
             sat=satellite,
             num=number,
         )
-        raise ValueError(msg)
+        raise NavMessageNotFoundError(msg)
 
     # Returns the first for GPS, BDS, Galileo, and IRNSS
     if satellite in GPS_WAY:
@@ -138,6 +131,14 @@ def find_message(nav_data, satellite, number, epoch):
         message = nearest_message(satellite_messages, epoch)
         # разница между сообщением и набл
         dt = get_dt(message['epoch'], epoch)
+    else:
+        raise NavMessageNotFoundError(
+            'Navigation message not found: {sat}{num} {epoch}'.format(
+                sat=satellite,
+                num=number,
+                epoch=epoch,
+            )
+        )
 
     return dt, message['message']
 
@@ -332,8 +333,7 @@ def xyz_calculator(satellite):
     elif satellite in GLO_WAY:
         return glo_sat_xyz
     else:
-        msg = 'Unknown satellite system {}.'.format(satellite)
-        raise ValueError(msg)
+        raise SatSystemError(satellite)
 
 
 @lru_cache(maxsize=8)
@@ -360,19 +360,12 @@ def satellite_xyz(filename, satellite, number, epoch):
 
     """
     calculate = xyz_calculator(satellite)
-
-    # прочитать файл в структуру
     data = read_nav_data(filename)
-
-    # найти подходящую запись
     dt, message = find_message(
         data,
         satellite,
         number,
         epoch,
     )
-
-    # посчитать координаты
     xyz = calculate(message, dt)
-
     return xyz

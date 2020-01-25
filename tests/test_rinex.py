@@ -4,6 +4,7 @@ import pytest
 
 from coordinates.broadcast import RinexNavFileV2, RinexNavFileV3
 from coordinates.broadcast import rnx_nav
+from coordinates.exceptions import RinexNavFileError
 
 
 @pytest.mark.parametrize('content, expected_type', [
@@ -59,5 +60,5 @@ def test_rnx_nav_unknown_version(content):
     with NamedTemporaryFile(mode='w') as tmp_file:
         tmp_file.writelines(content)
         tmp_file.seek(0)
-        with pytest.raises(ValueError, match=r'Version \S+ is not supported.'):
+        with pytest.raises(RinexNavFileError, match=r'Version \S+ is not supported.'):
             rnx_nav(filename=tmp_file.name)

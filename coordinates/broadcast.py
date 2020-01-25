@@ -5,6 +5,8 @@ import datetime
 import logging
 from abc import ABC, abstractmethod
 
+from coordinates.exceptions import RinexNavFileError
+
 LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
@@ -104,18 +106,49 @@ class RinexNavFile(ABC):
 
     @staticmethod
     def skip_header(file_object):
+        """
+        Skip the header of the file.
+
+        Parameters
+        ----------
+        file_object : file-like object
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        RinexNavFileError
+            on unexpected end of the file.
+        """
         line = ''
         while line[60:73] != 'END OF HEADER':
             try:
                 line = next(file_object)
             except StopIteration:
                 msg = 'Unexpected end of the file.'
-                raise EOFError(msg)
+                raise RinexNavFileError(msg)
 
     @staticmethod
     def read_orbits(file_object, num_of_orbits):
-        """Return list of orbits read from the file
+        """Return list of orbits read from the file.
 
+        Parameters
+        ----------
+        file_object : iterable
+            file-like object
+
+        num_of_orbits : int
+
+        Returns
+        -------
+        orbits : list
+
+        Raises
+        ------
+        RinexNavFileError
+            on unexpected end of the file.
         """
         orbits = [None] * num_of_orbits
         for i in range(num_of_orbits):
@@ -123,7 +156,7 @@ class RinexNavFile(ABC):
                 line = next(file_object)
             except StopIteration:
                 msg = 'Unexpected end of the file.'
-                raise EOFError(msg)
+                raise RinexNavFileError(msg)
             orbits[i] = line.rstrip()
         return orbits
 
@@ -142,6 +175,11 @@ class RinexNavFile(ABC):
         Returns
         -------
         message : tuple
+
+        Raises
+        ------
+        RinexNavFileError
+            Can't parse the orbit record.
 
         """
         message = []
@@ -162,7 +200,7 @@ class RinexNavFile(ABC):
                 values = [s and float(s) or 0. for s in values]
             except ValueError:
                 msg = "Can't parse the orbit: {}".format(orbit)
-                raise Exception(msg)
+                raise RinexNavFileError(msg)
 
             message += values
 
@@ -190,20 +228,20 @@ class RinexNavFileV2(RinexNavFile):
 
         Returns
         -------
-        float, str
-            RINEX version and type
+        tuple
+            (float, str) -- RINEX version and type.
 
         Raises
         ------
-        EOFError
-            On empty file.
+        RinexNavFileError
+            on empty file.
 
         """
         with open(filename) as rinex:
             try:
                 header_line = next(rinex)
             except StopIteration:
-                raise EOFError('Unexpected end of the file.')
+                raise RinexNavFileError('Unexpected end of the file.')
             else:
                 version = float(header_line[:9])
                 file_type = header_line[20]
@@ -216,8 +254,10 @@ class RinexNavFileV2(RinexNavFile):
         Raises
         ------
         EOFError
-            On the end of the file.
+            on the end of the file.
 
+        RinexNavFileError
+            when it can't parse the epoch record.
         """
         try:
             line = next(file_object)
@@ -245,7 +285,7 @@ class RinexNavFileV2(RinexNavFile):
 
         except ValueError:
             msg = "Can't read epoch: {}.".format(line)
-            raise ValueError(msg)
+            raise RinexNavFileError(msg)
 
         return number, epoch, tuple(sv_clock)
 
@@ -310,7 +350,10 @@ class RinexNavFileV3(RinexNavFile):
         Raises
         ------
         EOFError
-            On the end of the file.
+            on the end of the file.
+
+        RinexNavFileError
+            when it can't parse the epoch record.
         """
         try:
             line = next(file_object)
@@ -337,7 +380,7 @@ class RinexNavFileV3(RinexNavFile):
 
         except ValueError:
             msg = "Can't read epoch: {}.".format(line)
-            raise ValueError(msg)
+            raise RinexNavFileError(msg)
 
         return system, number, epoch, tuple(sv_clock)
 
@@ -362,7 +405,7 @@ class RinexNavFileV3(RinexNavFile):
 
 
 def rnx_nav(filename):
-    """Возвращает объект RinexNavFile в зависимости от версии в файле
+    """Возвращает объект RinexNavFile в зависимости от версии в файле.
 
     """
     version, file_type = RinexNavFileV2.retrieve_ver_type(filename)
@@ -373,4 +416,4 @@ def rnx_nav(filename):
         return RinexNavFileV3(filename)
     else:
         msg = 'Version {} is not supported.'.format(version)
-        raise ValueError(msg)
+        raise RinexNavFileError(msg)

@@ -4,28 +4,37 @@ Tools for manipulating coordinates for gnss-lab project.
 
 """
 from math import pi, sin, cos, atan2, sqrt
+
+from coordinates.exceptions import XYZNotFoundError
 from coordinates.sat import satellite_xyz
 
-__version__ = '1.0.1'
+__all__ = ['satellite_xyz', 'retrieve_xyz', 'xyz2lbh']
+
+__version__ = '1.1.0-dev0'
 __author__ = __maintainer__ = 'Ilya Zhivetiev'
 __email__ = 'i.zhivetiev@gnss-lab.org'
 
 
 def retrieve_xyz(rnx_file):
     """Retrieve and return geocentric approximate marker position from the
-    rnx_file. ValueError is raised if nothing is found.
+    rnx_file.
 
     Parameters
     ----------
     rnx_file : str or file
-        File or filename. The file must be a plain RINEX observation file, e.g.
-        guniped and crx2rnx-ed. Note that the position will be seek to the start
-        of the file.
+        File or filename. The file must be a plain RINEX
+        observation file, e.g. guzniped and crx2rnx-ed. Note
+        that the position will seek to the start of the file.
 
     Returns
     -------
     xyz : tuple
         X, Y, and Z values
+
+    Raises
+    ------
+    XYZNotFoundError
+        'APPROX POSITION XYZ' record not found.
     """
     xyz_label = 'APPROX POSITION XYZ'
     end_label = 'END OF HEADER'
@@ -59,7 +68,7 @@ def retrieve_xyz(rnx_file):
     if xyz:
         return tuple(xyz)
     else:
-        raise ValueError
+        raise XYZNotFoundError("Can't find %s" % xyz_label)
 
 
 def xyz2lbh(x, y, z, deg=True):

@@ -12,7 +12,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup(
     name='coordinates',
 
-    description='Tools to manipulate cooridnates for GISMO project',
+    description='Tools to manipulate coordinates for GISMO project',
     long_description=long_description,
 
     version=coordinates.__version__,
@@ -36,6 +36,8 @@ setup(
         'License :: OSI Approved :: MIT License',
 
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
 
     keywords='ionosphere gnss coordinates development',

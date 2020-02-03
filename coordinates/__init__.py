@@ -10,7 +10,7 @@ from coordinates.sat import satellite_xyz
 
 __all__ = ['satellite_xyz', 'retrieve_xyz', 'xyz2lbh']
 
-__version__ = '1.1.0-dev0'
+__version__ = '1.1.0b1'
 __author__ = __maintainer__ = 'Ilya Zhivetiev'
 __email__ = 'i.zhivetiev@gnss-lab.org'
 

@@ -35,8 +35,12 @@ from coordinates.exceptions import RinexNavFileError
     ('''\
      3.03           N: GNSS NAV DATA    G: GPS              RINEX VERSION / TYPE
 ''', RinexNavFileV3),
+    ('''\
+     3.04           N: GNSS NAV DATA    G: GPS              RINEX VERSION / TYPE
+''', RinexNavFileV3),
 ], ids=[
-    '2', '2.01', '2.10 R', '2.10 G', '2.11', '3.00', '3.01', '3.02', '3.03'
+    '2', '2.01', '2.10 R', '2.10 G', '2.11',
+    '3.00', '3.01', '3.02', '3.03', '3.04',
 ])
 def test_rnx_nav(content, expected_type):
     with NamedTemporaryFile(mode='w') as tmp_file:
@@ -48,17 +52,18 @@ def test_rnx_nav(content, expected_type):
 
 @pytest.mark.parametrize('content', [
     '''\
-     3.04           N: GNSS NAV DATA    G: GPS              RINEX VERSION / TYPE
+     3.05           N: GNSS NAV DATA    G: GPS              RINEX VERSION / TYPE
 ''',
     '''\
      2.12           N: GNSS NAV DATA    G: GPS              RINEX VERSION / TYPE
 ''',
 ], ids=[
-    '3.04', '2.12',
+    '3.05', '2.12',
 ])
 def test_rnx_nav_unknown_version(content):
     with NamedTemporaryFile(mode='w') as tmp_file:
         tmp_file.writelines(content)
         tmp_file.seek(0)
-        with pytest.raises(RinexNavFileError, match=r'Version \S+ is not supported.'):
+        with pytest.raises(RinexNavFileError,
+                           match=r'Version \S+ is not supported.'):
             rnx_nav(filename=tmp_file.name)

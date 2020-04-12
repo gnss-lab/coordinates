@@ -412,7 +412,7 @@ def rnx_nav(filename):
 
     if version in {2.0, 2.01, 2.1, 2.11}:
         return RinexNavFileV2(filename)
-    elif version in {3.0, 3.01, 3.02, 3.03}:
+    elif version in {3.0, 3.01, 3.02, 3.03, 3.04}:
         return RinexNavFileV3(filename)
     else:
         msg = 'Version {} is not supported.'.format(version)

@@ -4,11 +4,38 @@
 import datetime
 import logging
 from abc import ABC, abstractmethod
+from io import StringIO
 
 from coordinates.exceptions import RinexNavFileError
 
 LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
+
+
+class IOWrapper():
+
+    def __init__(self, filename):
+        """
+        filename: str or StringIO
+        """
+        self.filename = filename
+        self.file_obj = None
+        self.seek = False
+
+    def __enter__(self):
+        if isinstance(self.filename, str):
+            self.file_obj = open(self.filename)
+        else:
+            self.file_obj = self.filename
+            self.seek = True
+        return self.file_obj
+    
+    def __exit__(self, *exc):
+        if self.seek:
+            self.file_obj.seek(0)
+        else:
+            self.file_obj.close()
+        return False
 
 
 def validate_epoch(epoch):
@@ -237,7 +264,7 @@ class RinexNavFileV2(RinexNavFile):
             on empty file.
 
         """
-        with open(filename) as rinex:
+        with IOWrapper(filename) as rinex:
             try:
                 header_line = next(rinex)
             except StopIteration:
@@ -294,7 +321,7 @@ class RinexNavFileV2(RinexNavFile):
         values_per_orbit = self.values_per_orbit[system]
         num_of_orbits = len(values_per_orbit)
 
-        with open(self.filename, 'r') as file_object:
+        with IOWrapper(self.filename) as file_object:
             self.skip_header(file_object)
 
             while True:
@@ -326,12 +353,11 @@ class RinexNavFileV3(RinexNavFile):
         """Возвращает версию, тип файла и спутниковую систему
 
         """
-        with open(filename) as rinex:
+        with IOWrapper(filename) as rinex:
             header_line = next(rinex)
             version = float(header_line[:9])
             file_type = header_line[20]
             system = header_line[40]
-
         return version, file_type, system
 
     @staticmethod
@@ -385,7 +411,7 @@ class RinexNavFileV3(RinexNavFile):
         return system, number, epoch, tuple(sv_clock)
 
     def __iter__(self):
-        with open(self.filename, 'r') as file_object:
+        with IOWrapper(self.filename) as file_object:
             self.skip_header(file_object)
 
             while True:

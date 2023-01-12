@@ -38,9 +38,12 @@ from coordinates.exceptions import RinexNavFileError
     ('''\
      3.04           N: GNSS NAV DATA    G: GPS              RINEX VERSION / TYPE
 ''', RinexNavFileV3),
+    ('''\
+     3.05           N: GNSS NAV DATA    G: GPS              RINEX VERSION / TYPE
+''', RinexNavFileV3),
 ], ids=[
     '2', '2.01', '2.10 R', '2.10 G', '2.11',
-    '3.00', '3.01', '3.02', '3.03', '3.04',
+    '3.00', '3.01', '3.02', '3.03', '3.04', '3.05'
 ])
 def test_rnx_nav(content, expected_type):
     with NamedTemporaryFile(mode='w') as tmp_file:
@@ -52,13 +55,13 @@ def test_rnx_nav(content, expected_type):
 
 @pytest.mark.parametrize('content', [
     '''\
-     3.05           N: GNSS NAV DATA    G: GPS              RINEX VERSION / TYPE
+     3.06           N: GNSS NAV DATA    G: GPS              RINEX VERSION / TYPE
 ''',
     '''\
      2.12           N: GNSS NAV DATA    G: GPS              RINEX VERSION / TYPE
 ''',
 ], ids=[
-    '3.05', '2.12',
+    '3.06', '2.12',
 ])
 def test_rnx_nav_unknown_version(content):
     with NamedTemporaryFile(mode='w') as tmp_file:

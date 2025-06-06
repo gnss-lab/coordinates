@@ -82,7 +82,8 @@ def nearest_message(messages, obs_epoch):
 
     """
     first_date = messages[0]['epoch'].date()
-    if not obs_epoch.date() == first_date:
+    last_date = messages[-1]['epoch'].date()
+    if not (obs_epoch.date() == first_date or obs_epoch.date() == last_date):
         raise NavMessageNotFoundError(
             'The dates of the nav message and observation must be the same.'
         )
